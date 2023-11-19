@@ -5,13 +5,13 @@
 			{
 				"indexed": true,
 				"internalType": "uint32",
-				"name": "",
+				"name": "system_id",
 				"type": "uint32"
 			},
 			{
 				"indexed": true,
 				"internalType": "uint32",
-				"name": "",
+				"name": "snapshot_id",
 				"type": "uint32"
 			},
 			{

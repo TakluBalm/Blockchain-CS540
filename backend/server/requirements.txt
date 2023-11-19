@@ -1,0 +1,5 @@
+Flask
+tensorflow
+web3
+flask_cors
+APScheduler

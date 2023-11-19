@@ -15,19 +15,19 @@ contract DataBackup {
     mapping(uint32 => uint32) snapshot;
     mapping(address => uint32) ids;
     uint32 next_id = 1;
-    event DataUpload(uint32 indexed, uint32 indexed, bytes name, bytes data);
+    event DataUpload(uint32 indexed system_id, uint32 indexed snapshot_id, bytes name, bytes data);
 
     modifier FirstTime {
         require(ids[msg.sender] == 0, "Already assigned System id (Use getSystemId call to retrieve it)");
         _;
     }
 
-    modifier Exists {
-        require(ids[msg.sender] != 0, "Need to register before fetching Id (Use generateSystemId to register)");
+    modifier Registered {
+        require(ids[msg.sender] != 0, "Need to register (Use generateSystemId to register)");
         _;
     }
 
-    function uploadFile(File calldata file) public {
+    function uploadFile(File calldata file) public Registered {
         uint32 id = ids[msg.sender];
         emit DataUpload(id, snapshot[id], file.name, file.data);
     }
@@ -37,15 +37,15 @@ contract DataBackup {
         return next_id++;
     }
 
-    function getSystemId() public view Exists returns(uint32) {
+    function getSystemId() public view Registered returns(uint32) {
         return ids[msg.sender];
     }
 
-    function startNewSnapshot() public Exists {
+    function startNewSnapshot() public Registered {
         snapshot[ids[msg.sender]]++;
     }
 
-    function snapshotId() public view Exists returns(uint32) {
+    function snapshotId() public view Registered returns(uint32) {
         return snapshot[ids[msg.sender]];
     }
 

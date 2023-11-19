@@ -3,8 +3,11 @@ const fs = require("fs");
 const path = require("path");
 const solc = require("solc");
 
+const BUILD = "../build/"
+const CONTRACT = "../contracts/"
+
 async function main() {
-	const solFiles = fs.readdirSync("./contracts/").filter(e1 => path.extname(e1) === '.sol');
+	const solFiles = fs.readdirSync(CONTRACT).filter(e1 => path.extname(e1) === '.sol');
 	var input = {
 		language: "Solidity",
 		sources: {},
@@ -18,13 +21,13 @@ async function main() {
 	}
 
 	solFiles.forEach((file) => input["sources"]["file"] = {
-		content: String(fs.readFileSync(`./contracts/${file}`))
+		content: String(fs.readFileSync(`./${CONTRACT}/${file}`))
 	});
 
 	const byteCode = JSON.parse(solc.compile(JSON.stringify(input)))["contracts"]["file"];
 	var contracts = []
 	for(let key in byteCode) {
-		fs.writeFile(`./build/abi/${key}.json`, JSON.stringify(byteCode[key]["abi"], null, '\t'), (err) => {})
+		fs.writeFile(`./${BUILD}/abi/${key}.json`, JSON.stringify(byteCode[key]["abi"], null, '\t'), () => {})
 		contracts.push(key)
 	}
 
@@ -43,7 +46,7 @@ async function main() {
 				gas: 30000000,
 				gasPrice: 10000000000
 			})
-			fs.writeFile(`./scripts/${contract}.addr`, tx.options.address, (err) => {});
+			fs.writeFile(`../${contract}.addr`, tx.options.address, () => {});
 			console.log(`${contract}: ${tx.options.address}`)
 		} catch (err) {
 			console.log(err);

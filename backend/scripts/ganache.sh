@@ -1,0 +1,1 @@
+ganache --wallet.totalAccounts 20  --miner.defaultTransactionGasLimit 0xFA69BFC70 --miner.blockGasLimit 0x7FA69BFC70  --wallet.defaultBalance 1000 --miner.defaultGasPrice 1 --miner.instamine strict --logging.file logs --detach
