@@ -1,8 +1,12 @@
 import React, {useState} from 'react'
+
 export default function FileUpload() {
 
     const [name, setName] = useState("");
     const [file, setFile] = useState(null);
+	const [firstUse, setFirstUse] = useState(true);
+	const [success, setSuccess] = useState(false);
+	const [reason, setReason] = useState("");
 
     const getName = (e) => {
         setName(e.target.value);
@@ -13,7 +17,20 @@ export default function FileUpload() {
 
     const uploadData = async (e) => {
         e.preventDefault();
+		if(firstUse) {
+			setFirstUse(false);
+		}
         const formData = new FormData();
+		if(!name) {
+			setSuccess(false);
+			setReason("Name field is required");
+			return;
+		}
+		if(!file) {
+			setSuccess(false);
+			setReason("Upload a file");
+			return;
+		}
         formData.append("name", name);
         formData.append("file", file);
 
@@ -24,10 +41,12 @@ export default function FileUpload() {
 				body: formData
 			});
 			const data = await res.json();
-			console.log(data);
+			setSuccess(data["success"]);
+			setReason(data["reason"]);
 		} catch (e) {
-			console.log(e);
-		}        
+			setSuccess(false);
+			setReason("Error occured while connecting to server")
+		}
      }
     return (
         <>
@@ -37,7 +56,6 @@ export default function FileUpload() {
                         <h2 class="mt-5 text-3xl font-bold text-gray-900">
                             Upload your data file here
                         </h2>
-                        {/* <p class="mt-2 text-sm text-gray-400">Lorem ipsum is placeholder text.</p> */}
                     </div>
 
                     <div class="mt-8 space-y-3" >
@@ -82,6 +100,13 @@ export default function FileUpload() {
                                 Upload to Server
                             </button>
                         </div>
+						{!firstUse && (
+							<div className={`${success ? "bg-green-500" : "bg-red-500"} bg-opacity-50 p-6 rounded shadow-lg`}>
+								<p className="text-lg font-semibold mb-4">
+									{reason}
+								</p>
+							</div>
+						)}
                     </div>
                 </div>
             </div>
