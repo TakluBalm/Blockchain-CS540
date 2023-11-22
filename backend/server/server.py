@@ -5,17 +5,18 @@ import web3
 from sys import path
 import time
 import os
-import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
+import zipfile
+import base64
 import joblib
 import subprocess
 
-
 app = Flask("backend")
-cors = CORS(app=app, resources={r"/upload": {"origins": "http://localhost:3000"}})
+cors = CORS(app=app, resources={r"/upload": {"origins": "http://localhost:3000"}, r"/latestSnapshot": {"origins": "http://localhost:3000"}})
 
 STORE_DIR = "./root/"
 TEMPORARY_STORE_DIR = "./root-file-checking"
+
 
 flag = [False, False]
 turn = 0
@@ -42,10 +43,7 @@ except:
 
 SYSTEM_ID = contracts[DATABACKUP].functions.getSystemId().call({"from": account})
 print(f"[LOG] system_id={SYSTEM_ID}")
-LAST_SNAPSHOT = -1
-
-# Loading the model
-# model = joblib.load("model.joblib")
+LAST_SNAPSHOT = contracts[DATABACKUP].functions.snapshotId().call({"from": account})
 
 @app.route("/upload", methods=['POST'])
 def upload_handler():
@@ -80,6 +78,19 @@ def upload_handler():
 
 	return json.dumps(data)
 
+@app.route('/latestSnapshot')
+def latestSnapshot():
+	logs = getData(system_id=SYSTEM_ID, snapshot_id=LAST_SNAPSHOT)
+	tmpname = f'./tmp-{time.asctime(time.localtime())}-{SYSTEM_ID}-{LAST_SNAPSHOT}.zip'
+	with zipfile.ZipFile(tmpname, "w", zipfile.ZIP_DEFLATED) as zip:
+		for log in logs:
+			# print(type(log["name"]), type(log["data"]))
+			zip.writestr(str(log["name"]), log["data"])
+	with open(tmpname, "rb") as f:
+		data = f.read()
+	os.remove(tmpname)
+	return json.dumps({"data": base64.b64encode(data).decode("ascii")})
+
 def getData(system_id: int = -1, snapshot_id: int = -1) -> list:
 	filters = {}
 	if system_id != -1:
@@ -92,11 +103,6 @@ def getData(system_id: int = -1, snapshot_id: int = -1) -> list:
 		processed_logs.append(log['args'])
 	return processed_logs
 
-# equals 1 if infected else 0
-def predict(file):
-    # Example: Dummy prediction
-    return "True" if file is not None else "False"
-	
 def detect_ransomware(filename):
 	try:
 		# Run the script as a subprocess with the file path as an argument
@@ -117,7 +123,6 @@ def detect_ransomware(filename):
 	except Exception as e:
 		return jsonify({'error': str(e)})
 
-
 def flatten(directory: str) -> list:
 	l = []
 	for d,_,files in os.walk(directory):
@@ -127,6 +132,8 @@ def flatten(directory: str) -> list:
 	return l
 
 def generate_backup():
+	global turn
+	global flag
 	flag[BACKUP] = True
 	while flag[SAVE] == True and turn == SAVE:
 		pass
@@ -137,14 +144,17 @@ def generate_backup():
 
 	files = flatten(STORE_DIR)
 	for file in files:
-		contracts[DATABACKUP].functions.uploadFile((bytes(file, 'UTF-8'), open(file, "rb").read())).transact({"from": account})
+		name = file.removeprefix('./root')
+		if name == '/.gitkeep':
+			continue
+		name = bytes(name, 'UTF-8')
+		with open(file, "rb") as f:
+			data = f.read()
+		contracts[DATABACKUP].functions.uploadFile((bytes(file.removeprefix('./root'), 'UTF-8'), data)).transact({"from": account})
 
 	# Save the last successful snapshot ID
 	global LAST_SNAPSHOT
 	LAST_SNAPSHOT = contracts[DATABACKUP].functions.snapshotId().call({"from": account})
-
-	# getData
-	# logs = getData(system_id=SYSTEM_ID, snapshot_id=LAST_SNAPSHOT)
 
 	print("[LOG] Completed Backup: ", time.asctime(time.localtime()))
 	turn = SAVE
