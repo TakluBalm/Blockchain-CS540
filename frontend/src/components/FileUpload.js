@@ -1,4 +1,5 @@
 import React, {useState} from 'react'
+import { Buffer } from "buffer"
 
 export default function FileUpload() {
 
@@ -13,7 +14,20 @@ export default function FileUpload() {
     }
     const getFile = (e) => {
         setFile(e.target.files[0]);
+		setName(e.target.files[0].name)
     }
+
+	// Returns snapshot in zipped form
+	const getRecoveryData = async (e) => {
+		try {
+			const res = await fetch('http://localhost:5000/latestSnapshot');
+			let data = await res.json();
+			data = Buffer.from(data["data"], 'base64');
+			return data;
+		} catch (err) {
+			console.log(err);
+		}
+	}
 
     const uploadData = async (e) => {
         e.preventDefault();
