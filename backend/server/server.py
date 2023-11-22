@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import web3
@@ -7,11 +7,15 @@ import time
 import os
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
+import joblib
+import subprocess
+
 
 app = Flask("backend")
 cors = CORS(app=app, resources={r"/upload": {"origins": "http://localhost:3000"}})
 
 STORE_DIR = "./root/"
+TEMPORARY_STORE_DIR = "./root-file-checking"
 
 flag = [False, False]
 turn = 0
@@ -40,12 +44,17 @@ SYSTEM_ID = contracts[DATABACKUP].functions.getSystemId().call({"from": account}
 print(f"[LOG] system_id={SYSTEM_ID}")
 LAST_SNAPSHOT = -1
 
+# Loading the model
+# model = joblib.load("model.joblib")
+
 @app.route("/upload", methods=['POST'])
 def upload_handler():
 	try:
 		file = request.files['file']
 		filename = request.form['name']
-		infected = detect_ransomware(request.form['name'], file.stream.read())
+		file.save(f'{TEMPORARY_STORE_DIR}/{filename}')
+		print("point-1")
+		infected = detect_ransomware(filename)
 		success = True
 		reason = ""
 		if not infected:
@@ -83,8 +92,31 @@ def getData(system_id: int = -1, snapshot_id: int = -1) -> list:
 		processed_logs.append(log['args'])
 	return processed_logs
 
-def detect_ransomware(name: str, data: bytes):
-	return False
+# equals 1 if infected else 0
+def predict(file):
+    # Example: Dummy prediction
+    return "True" if file is not None else "False"
+	
+def detect_ransomware(filename):
+	try:
+		# Run the script as a subprocess with the file path as an argument
+		temp_file_path = filename
+		root_dir = './root-file-checking/'
+		file_path = os.path.join(root_dir,temp_file_path)
+
+		command = ['python', './model_ransomware/mlrd.py', file_path]
+		result = subprocess.check_output(command, universal_newlines=True)
+
+		print(result)
+
+		if result[58] == 'b':
+			return False
+		else:
+			return True
+	
+	except Exception as e:
+		return jsonify({'error': str(e)})
+
 
 def flatten(directory: str) -> list:
 	l = []
