@@ -1,53 +1,58 @@
 import React, {useState} from 'react'
 import { Buffer } from "buffer"
+import Alert from './Alert';
+import { useNavigate } from 'react-router-dom';
 
 export default function FileUpload() {
-
+    const navigate = useNavigate();
     const [name, setName] = useState("");
     const [file, setFile] = useState(null);
-	const [firstUse, setFirstUse] = useState(true);
-	const [success, setSuccess] = useState(false);
-	const [reason, setReason] = useState("");
+	const [success, setSuccess] = useState(0);
+    const [buttonName, setButtonName] = useState("Upload To Server")
+
+    const checkParams = () => {
+        if(name === "") {
+            setSuccess(1)
+            return 1;
+        }
+        else if(file === null) {
+            setSuccess(2)
+            return 2
+        }
+        else {
+            setSuccess(0)
+            return 0;
+        }
+    }
 
     const getName = (e) => {
         setName(e.target.value);
     }
+
     const getFile = (e) => {
         setFile(e.target.files[0]);
-		setName(e.target.files[0].name)
+		if(name === "") 
+        {
+            setName(e.target.files[0].name)
+        }
     }
-
-	// Returns snapshot in zipped form
-	const getRecoveryData = async (e) => {
-		try {
-			const res = await fetch('http://localhost:5000/latestSnapshot');
-			let data = await res.json();
-			data = Buffer.from(data["data"], 'base64');
-			return data;
-		} catch (err) {
-			console.log(err);
-		}
-	}
 
     const uploadData = async (e) => {
         e.preventDefault();
-		if(firstUse) {
-			setFirstUse(false);
-		}
+
+        // for testing
+        // sessionStorage.setItem("success", false);
+        // sessionStorage.setItem("reason", "wnedirfi");
+        // navigate("/result")
+        // return;
+
+        if(checkParams() !== 0) {
+            return;
+        }
         const formData = new FormData();
-		if(!name) {
-			setSuccess(false);
-			setReason("Name field is required");
-			return;
-		}
-		if(!file) {
-			setSuccess(false);
-			setReason("Upload a file");
-			return;
-		}
         formData.append("name", name);
         formData.append("file", file);
-
+        setButtonName("Uploading...")
        // request to server to save application data\
        	try{
 			const res = await fetch("http://localhost:5000/upload", {
@@ -55,14 +60,15 @@ export default function FileUpload() {
 				body: formData
 			});
 			const data = await res.json();
-            console.log(data)
-			setSuccess(data["success"]);
-			setReason(data["reason"]);
+            sessionStorage.setItem("success", data["success"]);
+            sessionStorage.setItem("reason", data["reason"]);
+            navigate("/result")
 		} catch (e) {
-			setSuccess(false);
-			setReason("Error occured while connecting to server")
+			setSuccess(0);
+			window.alert("Error occured while connecting to server")
 		}
-     }
+    }
+
     return (
         <>
             <div class="relative  flex items-center justify-center  bg-no-repeat bg-cover">
@@ -83,6 +89,7 @@ export default function FileUpload() {
                                 type="" placeholder="Hacker"
                             />
                         </div>
+                        {success === 1 && <Alert reason="Please Provide Valid Name" />}
                        
                         <div class="grid grid-cols-1 space-y-2">
                             <label class="text-sm font-bold text-gray-500 tracking-wide">Upload Data</label>
@@ -107,21 +114,15 @@ export default function FileUpload() {
                                     <input type="file" class="hidden" onChange={getFile}/>
                                 </label>
                             </div>
+                            { success === 2 && <Alert reason="Please Provide Valid File" />}
                         </div>
 
                         <div>
                             <button class="my-5 w-full flex justify-center bg-blue-500 text-gray-100 p-4  rounded-full tracking-wide font-semibold  focus:outline-none focus:shadow-outline hover:bg-blue-600 shadow-lg cursor-pointer transition ease-in duration-300"
 							onClick={uploadData} >
-                                Upload to Server
+                                {buttonName}
                             </button>
                         </div>
-						{!firstUse && (
-							<div className={`${success ? "bg-green-500" : "bg-red-500"} bg-opacity-50 p-6 rounded shadow-lg`}>
-								<p className="text-lg font-semibold mb-4">
-									{reason}
-								</p>
-							</div>
-						)}
                     </div>
                 </div>
             </div>
