@@ -8,6 +8,7 @@ export default function FileUpload() {
     const [name, setName] = useState("");
     const [file, setFile] = useState(null);
 	const [success, setSuccess] = useState(0);
+    const [buttonName, setButtonName] = useState("Upload To Server")
 
     const checkParams = () => {
         if(name === "") {
@@ -51,7 +52,7 @@ export default function FileUpload() {
         const formData = new FormData();
         formData.append("name", name);
         formData.append("file", file);
-
+        setButtonName("Uploading...")
        // request to server to save application data\
        	try{
 			const res = await fetch("http://localhost:5000/upload", {
@@ -119,7 +120,7 @@ export default function FileUpload() {
                         <div>
                             <button class="my-5 w-full flex justify-center bg-blue-500 text-gray-100 p-4  rounded-full tracking-wide font-semibold  focus:outline-none focus:shadow-outline hover:bg-blue-600 shadow-lg cursor-pointer transition ease-in duration-300"
 							onClick={uploadData} >
-                                Upload to Server
+                                {buttonName}
                             </button>
                         </div>
                     </div>
