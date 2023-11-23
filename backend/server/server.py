@@ -8,7 +8,6 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import zipfile
 import base64
-import joblib
 import subprocess
 
 app = Flask("backend")
@@ -50,9 +49,11 @@ def upload_handler():
 	try:
 		file = request.files['file']
 		filename = request.form['name']
-		file.save(f'{TEMPORARY_STORE_DIR}/{filename}')
-		print("point-1")
+		TMP_PATH = f'{TEMPORARY_STORE_DIR}/{filename}'
+		SAVE_PATH = f'{STORE_DIR}/{filename}'
+		file.save(TMP_PATH)
 		infected = detect_ransomware(filename)
+		os.remove(TMP_PATH)
 		success = True
 		reason = ""
 		if not infected:
@@ -61,7 +62,7 @@ def upload_handler():
 				success = False
 				reason = "Backup in progress"
 			else:
-				file.save(f'{STORE_DIR}/{filename}')
+				file.save(SAVE_PATH)
 				reason = "Saved successfully"
 			flag[SAVE] = False
 		else:

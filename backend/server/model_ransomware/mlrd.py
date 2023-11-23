@@ -450,13 +450,12 @@ def main():
         print("The file has been identified as "+colored('benign.\n', 'green'))
         # print(colored('[*] ', 'green') + "The file %s has been identified as " % os.path.basename(sys.argv[1]) + colored('benign.\n', 'green'))
     else:
-        print(colored('[*] ', 'red') + "The file %s has been identified as " % os.path.basename(sys.argv[1]) + colored('malicious.\n', 'red'))
+        print("The file has been identified as "+colored('malicious.\n', 'red'))
+        # print(colored('[*] ', 'red') + "The file %s has been identified as " % os.path.basename(sys.argv[1]) + colored('malicious.\n', 'red'))
 
     # Passes command line arguments to parse function for parsing.
     if args.display or args.virustotal or args.threatcrowd or args.hybridanalysis:
         parse(args.file, feature_list, args.display, args.virustotal, args.threatcrowd, args.hybridanalysis)
 
 if __name__ == '__main__':
-    file = './calc.exe'
-    # print("started-2")
     main()

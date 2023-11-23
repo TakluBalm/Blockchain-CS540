@@ -55,6 +55,7 @@ export default function FileUpload() {
 				body: formData
 			});
 			const data = await res.json();
+            console.log(data)
 			setSuccess(data["success"]);
 			setReason(data["reason"]);
 		} catch (e) {
