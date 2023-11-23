@@ -82,11 +82,11 @@ def upload_handler():
 @app.route('/latestSnapshot')
 def latestSnapshot():
 	logs = getData(system_id=SYSTEM_ID, snapshot_id=LAST_SNAPSHOT)
-	tmpname = f'./tmp-{time.asctime(time.localtime())}-{SYSTEM_ID}-{LAST_SNAPSHOT}.zip'
+	# tmpname = f'tmp-{time.asctime(time.localtime())}-{SYSTEM_ID}-{LAST_SNAPSHOT}.zip'
+	tmpname = 'tmp.zip'
 	with zipfile.ZipFile(tmpname, "w", zipfile.ZIP_DEFLATED) as zip:
 		for log in logs:
-			# print(type(log["name"]), type(log["data"]))
-			zip.writestr(str(log["name"]), log["data"])
+			zip.writestr(log["name"].decode('UTF-8'), log["data"])
 	with open(tmpname, "rb") as f:
 		data = f.read()
 	os.remove(tmpname)
