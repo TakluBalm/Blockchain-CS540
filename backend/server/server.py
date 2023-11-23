@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import json
 import web3
@@ -8,6 +8,7 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import zipfile
 import base64
+import io
 import subprocess
 
 app = Flask("backend")
@@ -53,29 +54,29 @@ def upload_handler():
 		SAVE_PATH = f'{STORE_DIR}/{filename}'
 		file.save(TMP_PATH)
 		infected = detect_ransomware(filename)
-		os.remove(TMP_PATH)
 		success = True
 		reason = ""
 		if not infected:
-			flag[SAVE] = True
-			if flag[BACKUP] == True and turn == BACKUP:
-				success = False
-				reason = "Backup in progress"
-			else:
-				file.save(SAVE_PATH)
-				reason = "Saved successfully"
-			flag[SAVE] = False
+			with open(SAVE_PATH, "wb") as save:
+				with open(TMP_PATH, "rb") as tmp:
+					save.write(tmp.read())
+			reason = "Saved successfully"
 		else:
 			success = False
 			reason = "File is a ransomware"
-	except:
+	except Exception as err:
 		success = False
 		reason = "Server Error"
+		print(err)
+
 
 	data = {
 		"success": success,
 		"reason": reason
 	}
+
+	if not success:
+		os.remove(TMP_PATH)
 
 	return json.dumps(data)
 
@@ -86,11 +87,12 @@ def latestSnapshot():
 	tmpname = 'tmp.zip'
 	with zipfile.ZipFile(tmpname, "w", zipfile.ZIP_DEFLATED) as zip:
 		for log in logs:
+			print(log["name"].decode('UTF-8'))
 			zip.writestr(log["name"].decode('UTF-8'), log["data"])
 	with open(tmpname, "rb") as f:
 		data = f.read()
-	os.remove(tmpname)
-	return json.dumps({"data": base64.b64encode(data).decode("ascii")})
+	# os.remove(tmpname)
+	return send_file(io.BytesIO(data), mimetype='application/zip', as_attachment=True, download_name='recovery.zip')
 
 def getData(system_id: int = -1, snapshot_id: int = -1) -> list:
 	filters = {}
@@ -133,11 +135,6 @@ def flatten(directory: str) -> list:
 	return l
 
 def generate_backup():
-	global turn
-	global flag
-	flag[BACKUP] = True
-	while flag[SAVE] == True and turn == SAVE:
-		pass
 	print("[LOG] Started Backup: ", time.asctime(time.localtime()))
 
 	# Create new snapshot
@@ -151,7 +148,7 @@ def generate_backup():
 		name = bytes(name, 'UTF-8')
 		with open(file, "rb") as f:
 			data = f.read()
-		contracts[DATABACKUP].functions.uploadFile((bytes(file.removeprefix('./root'), 'UTF-8'), data)).transact({"from": account})
+		contracts[DATABACKUP].functions.uploadFile((bytes(file.removeprefix('./root/'), 'UTF-8'), data)).transact({"from": account})
 
 	# Save the last successful snapshot ID
 	global LAST_SNAPSHOT

@@ -1,6 +1,7 @@
 import React from 'react'
 import { MdNoEncryptionGmailerrorred } from "react-icons/md";
 import { BiError } from "react-icons/bi";
+import { Buffer } from 'buffer';
 
 export default function NegativeResult() {
 
@@ -26,14 +27,12 @@ export default function NegativeResult() {
         e.preventDefault();
         try {
             const res = await fetch('http://localhost:5000/latestSnapshot');
-            let data = await res.json();
-            data = Buffer.from(data["data"], 'base64');
-            const blob = new Blob([data], { type: 'application/zip' }); // Set the correct MIME type for a ZIP file
+            const blob = await res.blob();
 
             // Create a download link
             const downloadLink = document.createElement('a');
             downloadLink.href = URL.createObjectURL(blob);
-            downloadLink.download = 'file_name.zip'; // Set the desired file name with the .zip extension
+            downloadLink.download = 'recovery.zip'
 
             // Append the link to the document
             document.body.appendChild(downloadLink);
