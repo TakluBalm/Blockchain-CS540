@@ -28,7 +28,21 @@ export default function NegativeResult() {
             const res = await fetch('http://localhost:5000/latestSnapshot');
             let data = await res.json();
             data = Buffer.from(data["data"], 'base64');
-            return data;
+            const blob = new Blob([data], { type: 'application/zip' }); // Set the correct MIME type for a ZIP file
+
+            // Create a download link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = 'file_name.zip'; // Set the desired file name with the .zip extension
+
+            // Append the link to the document
+            document.body.appendChild(downloadLink);
+
+            // Trigger a click on the link to start the download
+            downloadLink.click();
+
+            // Remove the link from the document
+            document.body.removeChild(downloadLink);
         } catch (err) {
             console.log(err);
         }
@@ -51,8 +65,8 @@ export default function NegativeResult() {
                 ))}
             </div>
             <div className="mt-10 text-center items-center">
-                <button 
-                    className="w-40 flex items-center px-4 py-2 font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80" 
+                <button
+                    className="w-40 flex items-center px-4 py-2 font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
                     onClick={getRecoveryData}
                 >
                     Recover Data
